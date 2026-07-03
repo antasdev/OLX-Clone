@@ -25,7 +25,7 @@ const MyAdsPage = () => {
 
         setLoading(true);
         const q = query(collection(fireStore, "products"), where("userId", "==", user.uid));
-        
+
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const userAds = querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -103,33 +103,80 @@ const MyAdsPage = () => {
         });
     }
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        try {
-            setUpdating(true);
-            let updateData = {
-                title: editingAd.title.trim(),
-                price: editingAd.price.trim(),
-                description: editingAd.description.trim(),
-                category: editingAd.category.trim()
-            };
+   const handleUpdate = async (e) => {
+    e.preventDefault();
 
-            if (editingImage) {
-                const imageUrl = await readImageAsDataUrl(editingImage);
-                updateData.imageUrl = imageUrl;
-            }
+    const title = editingAd.title.trim();
+    const price = editingAd.price.trim();
+    const description = editingAd.description.trim();
+    const category = editingAd.category.trim();
 
-            await updateProduct(editingAd.id, updateData);
-            setAds(ads.map(ad => ad.id === editingAd.id ? { ...editingAd, ...updateData } : ad));
-            setEditingAd(null);
-            setEditingImage(null);
-            toast.success("Ad updated successfully");
-        } catch (error) {
-            toast.error("Failed to update ad");
-        } finally {
-            setUpdating(false);
+    // Title validation
+    if (!title) {
+        return toast.warn("Title is required");
+    }
+
+    if (title.length < 3) {
+        return toast.warn("Title must be at least 3 characters");
+    }
+
+    // Price validation
+    if (!price) {
+        return toast.warn("Price is required");
+    }
+
+    if (isNaN(price) || Number(price) <= 0) {
+        return toast.warn("Please enter a valid price");
+    }
+
+
+    if (!description) {
+        return toast.warn("Description is required");
+    }
+
+    if (!category) {
+        return toast.warn("Please select a category");
+    }
+
+    if (editingImage && !editingImage.type.startsWith("image/")) {
+        return toast.warn("Please upload a valid image");
+    }
+
+    try {
+        setUpdating(true);
+
+        let updateData = {
+            title,
+            price,
+            description,
+            category,
+        };
+
+        if (editingImage) {
+            const imageUrl = await readImageAsDataUrl(editingImage);
+            updateData.imageUrl = imageUrl;
         }
-    };
+
+        await updateProduct(editingAd.id, updateData);
+
+        setAds(prevAds =>
+            prevAds.map(ad =>
+                ad.id === editingAd.id
+                    ? { ...ad, ...updateData }
+                    : ad
+            )
+        );
+
+        setEditingAd(null);
+        setEditingImage(null);
+
+        toast.success("Ad updated successfully");
+    } catch (error) {
+        toast.error("Failed to update ad");
+    } finally {
+        setUpdating(false);
+    }
+};
 
     if (!user) return null;
 
@@ -147,7 +194,7 @@ const MyAdsPage = () => {
                     ) : ads.length === 0 ? (
                         <div className="text-center py-20 bg-white rounded-lg shadow">
                             <p className="text-xl text-gray-500">You haven't posted any ads yet.</p>
-                            <button 
+                            <button
                                 onClick={() => navigate('/post')}
                                 className="mt-4 bg-teal-900 text-white px-6 py-2 rounded font-bold"
                             >
@@ -167,13 +214,13 @@ const MyAdsPage = () => {
                                         <p className="text-xs text-gray-400 mt-2">{ad.category}</p>
                                     </div>
                                     <div className="p-4 border-t flex justify-between gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => handleEdit(ad)}
                                             className="flex-grow bg-blue-500 text-white py-2 rounded font-semibold hover:bg-blue-600"
                                         >
                                             Edit
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleDelete(ad.id)}
                                             className="flex-grow bg-red-500 text-white py-2 rounded font-semibold hover:bg-red-600"
                                         >
@@ -192,22 +239,22 @@ const MyAdsPage = () => {
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">Edit Ad</h2>
                         <form onSubmit={handleUpdate} className="space-y-4">
-                            <input 
-                                className="w-full border p-2 rounded" 
-                                value={editingAd.title} 
-                                onChange={(e) => setEditingAd({...editingAd, title: e.target.value})}
+                            <input
+                                className="w-full border p-2 rounded"
+                                value={editingAd.title}
+                                onChange={(e) => setEditingAd({ ...editingAd, title: e.target.value })}
                                 placeholder="Title"
                             />
-                            <input 
-                                className="w-full border p-2 rounded" 
-                                value={editingAd.price} 
-                                onChange={(e) => setEditingAd({...editingAd, price: e.target.value})}
+                            <input
+                                className="w-full border p-2 rounded"
+                                value={editingAd.price}
+                                onChange={(e) => setEditingAd({ ...editingAd, price: e.target.value })}
                                 placeholder="Price"
                             />
-                            <select 
-                                className="w-full border p-2 rounded" 
-                                value={editingAd.category} 
-                                onChange={(e) => setEditingAd({...editingAd, category: e.target.value})}
+                            <select
+                                className="w-full border p-2 rounded"
+                                value={editingAd.category}
+                                onChange={(e) => setEditingAd({ ...editingAd, category: e.target.value })}
                             >
                                 <option value="Cars">Cars</option>
                                 <option value="Properties">Properties</option>
@@ -217,19 +264,19 @@ const MyAdsPage = () => {
                                 <option value="Bikes">Bikes</option>
                                 <option value="Furniture">Furniture</option>
                             </select>
-                            <textarea 
-                                className="w-full border p-2 rounded h-24" 
-                                value={editingAd.description} 
-                                onChange={(e) => setEditingAd({...editingAd, description: e.target.value})}
+                            <textarea
+                                className="w-full border p-2 rounded h-24"
+                                value={editingAd.description}
+                                onChange={(e) => setEditingAd({ ...editingAd, description: e.target.value })}
                                 placeholder="Description"
                             />
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Update Image</label>
                                 <div className="relative h-32 w-full border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors overflow-hidden">
-                                    <img 
-                                        className="h-full w-full object-contain p-2" 
-                                        src={editingImage ? URL.createObjectURL(editingImage) : editingAd.imageUrl} 
-                                        alt="Current Ad" 
+                                    <img
+                                        className="h-full w-full object-contain p-2"
+                                        src={editingImage ? URL.createObjectURL(editingImage) : editingAd.imageUrl}
+                                        alt="Current Ad"
                                     />
                                     <input
                                         type="file"
@@ -240,15 +287,15 @@ const MyAdsPage = () => {
                                 </div>
                             </div>
                             <div className="flex justify-end gap-2 pt-4">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     onClick={() => { setEditingAd(null); setEditingImage(null); }}
                                     className="px-4 py-2 text-gray-500 hover:text-gray-700"
                                 >
                                     Cancel
                                 </button>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     disabled={updating}
                                     className="bg-teal-900 text-white px-6 py-2 rounded font-bold disabled:bg-gray-400"
                                 >

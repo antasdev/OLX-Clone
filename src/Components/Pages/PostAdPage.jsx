@@ -82,6 +82,12 @@ const PostAdPage = () => {
             return;
         }
 
+        if (!image.type.startsWith('image/')) {
+            toast.warn('Please upload a valid image file.');
+            setSubmitting(false);
+            return;
+        }
+
         let imageUrl = '';
         if (image) {
             try {
@@ -124,7 +130,7 @@ const PostAdPage = () => {
             <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
                     <h2 className="text-3xl font-extrabold text-teal-900 mb-8 border-b pb-4">POST YOUR AD</h2>
-                    
+
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Ad Title</label>
@@ -139,7 +145,7 @@ const PostAdPage = () => {
 
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Category</label>
-                            <select 
+                            <select
                                 className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-teal-900 outline-none transition-all"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
